@@ -170,9 +170,7 @@ bd_uni/
 ├── practical_3.md        ← ER-модель у форматі звіту
 ├── practical_4.sql       ← Задачі 1–5: DDL + DML + SELECT-перевірки + quick counts
 ├── practical_5.sql       ← 19 DQL-задач
-├── practical_6.sql       ← Задачі 1–4: тригери + тести + висновки після кожної
-└── assets/
-    └── img/              ← скріншоти ER-діаграми, Workbench
+└── practical_6.sql       ← Задачі 1–4: тригери + тести + висновки після кожної
 ```
 
 ---
