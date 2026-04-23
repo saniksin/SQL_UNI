@@ -367,3 +367,59 @@ SELECT *,
 -- структура, спроєктована в практичних 3 і 4, дозволяє засобами DQL
 -- отримувати всі необхідні управлінські зрізи без зміни самої бази
 -- даних.
+
+
+-- ───────────────────────────────
+-- ⭐️ Додаткові завдання
+-- ───────────────────────────────
+
+-- Книги з продажами вище середніх
+SELECT b.Title,
+       SUM(oi.Quantity * oi.UnitPrice) AS Revenue
+FROM orderitem oi
+JOIN books b ON b.BookID = oi.BookID
+GROUP BY b.BookID, b.Title
+HAVING Revenue > (
+  SELECT AVG(total)
+  FROM (
+    SELECT SUM(Quantity * UnitPrice) AS total
+    FROM orderitem
+    GROUP BY BookID
+  ) t
+)
+ORDER BY Revenue DESC;
+
+-- Автор з найбільшим сумарним доходом
+SELECT a.Name,
+       SUM(oi.Quantity * oi.UnitPrice) AS TotalRevenue
+FROM authors a
+JOIN authorbook ab ON ab.AuthorID = a.AuthorID
+JOIN orderitem oi  ON oi.BookID   = ab.BookID
+GROUP BY a.AuthorID, a.Name
+ORDER BY TotalRevenue DESC
+LIMIT 1;
+
+-- Кількість замовлень у кожного клієнта
+SELECT ClientName, COUNT(*) AS OrderCount
+FROM orders
+GROUP BY ClientName
+ORDER BY OrderCount DESC;
+
+-- Активні контракти (EndDate ще не настала або NULL)
+SELECT c.ContractID, c.ContractType,
+       a.Name AS Author, e.Name AS Employee,
+       c.StartDate, c.EndDate
+FROM contracts c
+LEFT JOIN authors   a ON a.AuthorID   = c.AuthorID
+LEFT JOIN employees e ON e.EmployeeID = c.EmployeeID
+WHERE c.EndDate IS NULL OR c.EndDate >= CURDATE()
+ORDER BY c.StartDate;
+
+-- 5 найпопулярніших жанрів за кількістю проданих екземплярів
+SELECT b.Genre,
+       SUM(oi.Quantity) AS TotalSold
+FROM orderitem oi
+JOIN books b ON b.BookID = oi.BookID
+GROUP BY b.Genre
+ORDER BY TotalSold DESC
+LIMIT 5;
