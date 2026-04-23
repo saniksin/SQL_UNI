@@ -2,8 +2,18 @@
 -- Практична робота 4: DDL та DML команди
 -- Schema: publishing   |   MySQL 8.0+   |   MySQL Workbench
 -- ================================================================
--- Мета: закріпити навички DDL (створення структури) і DML
+-- Мета: закріпити навички DDL (створення структури) та DML
 -- (маніпулювання даними) на прикладі бази видавництва.
+-- ================================================================
+
+-- ================================================================
+-- Задача 1. Підготовча документація (структура таблиць)
+-- ================================================================
+-- Структуру і типи полів для всіх 8 таблиць описано у practical_3.md
+-- (розділ «Атрибути сутностей і ключі»). Нижче — реалізація мовою SQL.
+
+-- ================================================================
+-- Задача 2. Створення структури (DDL) мовою SQL
 -- ================================================================
 
 DROP DATABASE IF EXISTS publishing;
@@ -14,9 +24,7 @@ CREATE DATABASE publishing
 
 USE publishing;
 
--- ================================================================
--- DDL: створення базових таблиць
--- ================================================================
+-- ---- Базові таблиці ----
 
 -- Автори книг
 CREATE TABLE Authors (
@@ -73,11 +81,9 @@ CREATE TABLE Contracts (
   INDEX ix_contract_employee (EmployeeID)
 ) ENGINE=InnoDB;
 
--- ================================================================
--- DDL: асоціативні (M:N) таблиці
--- ================================================================
+-- ---- Асоціативні (M:N) таблиці ----
 
--- Автор ↔ Книга (M:N). AuthorOrder — порядковий номер автора у виданні.
+-- Автор ↔ Книга. AuthorOrder — порядковий номер автора у виданні.
 CREATE TABLE AuthorBook (
   AuthorID    INT NOT NULL,
   BookID      INT NOT NULL,
@@ -89,7 +95,7 @@ CREATE TABLE AuthorBook (
     ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Співробітник ↔ Книга (M:N). Task — роль працівника у проєкті книги.
+-- Співробітник ↔ Книга. Task — роль працівника у проєкті книги.
 CREATE TABLE EmployeeBook (
   EmployeeID INT NOT NULL,
   BookID     INT NOT NULL,
@@ -101,7 +107,7 @@ CREATE TABLE EmployeeBook (
     ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Замовлення ↔ Книга (M:N). Quantity і UnitPrice — на момент замовлення.
+-- Замовлення ↔ Книга. Quantity і UnitPrice — на момент замовлення.
 CREATE TABLE OrderItem (
   OrderItemID INT           AUTO_INCREMENT PRIMARY KEY,
   OrderID     INT           NOT NULL,
@@ -119,12 +125,20 @@ CREATE TABLE OrderItem (
 ) ENGINE=InnoDB;
 
 -- ================================================================
--- DML: INSERT — по 10 записів у кожну таблицю
+-- Задача 3. Вставка даних у БД Publishing: по 10 записів у таблицю
 -- ================================================================
+-- Для асоціативних таблиць та Contracts/OrderItem використовується
+-- INSERT ... SELECT із пошуком батьківського рядка за унікальним
+-- полем (Email / ISBN / ClientName+OrderDate). Це робить скрипт
+-- незалежним від порядку AUTO_INCREMENT і дозволяє безпечно
+-- перезапускати частини скрипта.
+-- ================================================================
+
+-- ---- Базові таблиці: прямі INSERT (10 рядків у кожну) ----
 
 START TRANSACTION;
 
--- ---- Authors (10) ----
+-- AUTHORS (10)
 INSERT INTO Authors (Name, Email, Phone, Country) VALUES
   ('Ірина Савчук',  'iryna.savchuk@ex.com', '+380501111111', 'Ukraine'),
   ('Олег Петренко', 'oleg.petrenko@ex.com', '+380671111112', 'Ukraine'),
@@ -137,7 +151,7 @@ INSERT INTO Authors (Name, Email, Phone, Country) VALUES
   ('Akira Tanaka',  'akira.tanaka@ex.com',  '+81311111111',  'Japan'),
   ('Eva Novak',     'eva.novak@ex.com',     '+42021111111',  'Czechia');
 
--- ---- Employees (10) ----
+-- EMPLOYEES (10) — Role: ENUM('Editor','Proofreader','Translator','Designer')
 INSERT INTO Employees (Name, Role, Email) VALUES
   ('Alice Novak',     'Editor',      'alice@pub.ch'),
   ('Bohdan Petrenko', 'Proofreader', 'bohdan@pub.ch'),
@@ -150,7 +164,7 @@ INSERT INTO Employees (Name, Role, Email) VALUES
   ('Julia Novakova',  'Editor',      'julia@pub.ch'),
   ('Karl Meier',      'Proofreader', 'karl@pub.ch');
 
--- ---- Books (10). ISBN унікальний. ----
+-- BOOKS (10) — ISBN унікальний
 INSERT INTO Books (Title, Genre, ISBN, PublishYear) VALUES
   ('Python для початківців', 'Навчальна',   '978-0-100000-001', 2023),
   ('SQL на практиці',        'Навчальна',   '978-0-100000-002', 2024),
@@ -163,134 +177,261 @@ INSERT INTO Books (Title, Genre, ISBN, PublishYear) VALUES
   ('Business Blue',          'Business',    '978-0-100000-009', 2024),
   ('Creative SQL',           'Technology',  '978-0-100000-010', 2023);
 
--- ---- Orders (10) ----
+-- ORDERS (10) — Status: ENUM('New','InProgress','Completed','Canceled')
 INSERT INTO Orders (OrderDate, ClientName, Status) VALUES
-  ('2025-01-10', 'TechBooks GmbH', 'New'),
-  ('2025-01-15', 'EduLab SA',      'Completed'),
-  ('2025-02-01', 'DataWorks AG',   'InProgress'),
-  ('2025-02-18', 'Libra LLC',      'Completed'),
-  ('2025-03-03', 'Orion Labs',     'New'),
-  ('2025-03-20', 'Pixel Media',    'InProgress'),
-  ('2025-04-05', 'QuickLearn',     'Completed'),
-  ('2025-04-22', 'Read&Co',        'New'),
-  ('2025-05-09', 'Star Books',     'Completed'),
-  ('2025-05-25', 'Nova Print',     'Canceled');
+  (DATE '2025-01-10', 'TechBooks GmbH', 'New'),
+  (DATE '2025-01-15', 'EduLab SA',      'Completed'),
+  (DATE '2025-02-01', 'DataWorks AG',   'InProgress'),
+  (DATE '2025-02-18', 'Libra LLC',      'Completed'),
+  (DATE '2025-03-03', 'Orion Labs',     'New'),
+  (DATE '2025-03-20', 'Pixel Media',    'InProgress'),
+  (DATE '2025-04-05', 'QuickLearn',     'Completed'),
+  (DATE '2025-04-22', 'Read&Co',        'New'),
+  (DATE '2025-05-09', 'Star Books',     'Completed'),
+  (DATE '2025-05-25', 'Nova Print',     'Canceled');
 
--- ---- AuthorBook (10) — зв'язок авторів і книг ----
-INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder) VALUES
-  (1,  1, 1),   -- Ірина Савчук   ← Python для початківців
-  (2,  2, 1),   -- Олег Петренко  ← SQL на практиці
-  (3,  3, 1),   -- Maria Rossi    ← Data Analytics 101
-  (4,  4, 1),   -- Jean Martin    ← Story Craft
-  (5,  5, 1),   -- Anna Müller    ← Mountains & Lakes
-  (6,  6, 1),   -- Lukas Steiner  ← AI for Editors
-  (7,  7, 1),   -- Sofia Garcia   ← Clean Data
-  (8,  8, 1),   -- Noah Johnson   ← Sci-Fi Tales
-  (9,  9, 1),   -- Akira Tanaka   ← Business Blue
-  (10, 10, 1);  -- Eva Novak      ← Creative SQL
+COMMIT;
 
--- ---- EmployeeBook (10) — робочі зв'язки співробітників із книгами ----
-INSERT INTO EmployeeBook (EmployeeID, BookID, Task) VALUES
-  (1,  1, 'Edit'),
-  (2,  1, 'Proofread'),
-  (3,  2, 'Translate'),
-  (4,  2, 'Design'),
-  (5,  3, 'Edit'),
-  (6,  4, 'Proofread'),
-  (7,  5, 'Translate'),
-  (8,  6, 'Design'),
-  (9,  7, 'Edit'),
-  (10, 8, 'Proofread');
+-- ---- Асоціативні таблиці: INSERT ... SELECT через Email / ISBN ----
 
--- ---- Contracts (10) — рівно один власник у кожного ----
-INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate) VALUES
-  (1,    NULL, 'Author',   '2024-01-15', '2025-12-31'),
-  (2,    NULL, 'Author',   '2024-03-01', '2025-12-31'),
-  (3,    NULL, 'Author',   '2024-05-10', '2026-05-10'),
-  (4,    NULL, 'Author',   '2024-06-01', NULL),
-  (5,    NULL, 'Author',   '2024-07-15', '2025-12-31'),
-  (NULL, 1,    'Employee', '2023-09-01', NULL),
-  (NULL, 2,    'Employee', '2023-10-01', NULL),
-  (NULL, 3,    'Employee', '2024-01-15', NULL),
-  (NULL, 4,    'Employee', '2024-02-01', '2025-12-31'),
-  (NULL, 5,    'Employee', '2024-03-10', NULL);
+START TRANSACTION;
 
--- ---- OrderItem (10) — позиції замовлень ----
-INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice) VALUES
-  (1,  1,   5, 350.00),
-  (1,  2,   3, 420.00),
-  (2,  3,  10, 400.00),
-  (3,  4,   2, 280.00),
-  (4,  5,   7, 310.00),
-  (5,  6,   4, 520.00),
-  (6,  7,   6, 290.00),
-  (7,  8,   8, 230.00),
-  (8,  9,   1, 610.00),
-  (9, 10,  12, 380.00),
-  (10, 1,  2, 350.00);  -- ця позиція видалиться каскадом після DELETE Orders(10)
+-- AUTHORBOOK (10) — link by Email + ISBN
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'iryna.savchuk@ex.com' AND b.ISBN = '978-0-100000-001';
+
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'oleg.petrenko@ex.com' AND b.ISBN = '978-0-100000-002';
+
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'm.rossi@ex.com' AND b.ISBN = '978-0-100000-003';
+
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'jean.martin@ex.com' AND b.ISBN = '978-0-100000-004';
+
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'anna.mueller@ex.com' AND b.ISBN = '978-0-100000-005';
+
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'lukas.steiner@ex.com' AND b.ISBN = '978-0-100000-006';
+
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'sofia.garcia@ex.com' AND b.ISBN = '978-0-100000-007';
+
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'noah.johnson@ex.com' AND b.ISBN = '978-0-100000-008';
+
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'akira.tanaka@ex.com' AND b.ISBN = '978-0-100000-009';
+
+INSERT INTO AuthorBook (AuthorID, BookID, AuthorOrder)
+SELECT a.AuthorID, b.BookID, 1
+  FROM Authors a JOIN Books b
+ WHERE a.Email = 'eva.novak@ex.com' AND b.ISBN = '978-0-100000-010';
+
+-- EMPLOYEEBOOK (10) — Task: ENUM('Edit','Proofread','Translate','Design')
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Edit'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'alice@pub.ch' AND b.ISBN = '978-0-100000-001';
+
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Proofread'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'bohdan@pub.ch' AND b.ISBN = '978-0-100000-002';
+
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Translate'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'chloe@pub.ch' AND b.ISBN = '978-0-100000-003';
+
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Design'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'dmytro@pub.ch' AND b.ISBN = '978-0-100000-004';
+
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Edit'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'emma@pub.ch' AND b.ISBN = '978-0-100000-005';
+
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Proofread'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'felix@pub.ch' AND b.ISBN = '978-0-100000-006';
+
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Translate'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'hanna@pub.ch' AND b.ISBN = '978-0-100000-007';
+
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Design'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'ivan@pub.ch' AND b.ISBN = '978-0-100000-008';
+
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Edit'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'julia@pub.ch' AND b.ISBN = '978-0-100000-009';
+
+INSERT INTO EmployeeBook (EmployeeID, BookID, Task)
+SELECT e.EmployeeID, b.BookID, 'Proofread'
+  FROM Employees e JOIN Books b
+ WHERE e.Email = 'karl@pub.ch' AND b.ISBN = '978-0-100000-010';
+
+COMMIT;
+
+-- ---- Contracts (10): 5 авторських + 5 співробітницьких ----
+-- Правила перевіряються тригерами у practical_6.sql:
+--   рівно один власник + ContractType відповідає власнику.
+
+START TRANSACTION;
+
+-- 5 для авторів
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT a.AuthorID, NULL, 'Author', DATE '2025-01-01', DATE '2025-12-31'
+  FROM Authors a WHERE a.Email = 'iryna.savchuk@ex.com';
+
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT a.AuthorID, NULL, 'Author', DATE '2025-02-01', NULL
+  FROM Authors a WHERE a.Email = 'm.rossi@ex.com';
+
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT a.AuthorID, NULL, 'Author', DATE '2025-03-01', NULL
+  FROM Authors a WHERE a.Email = 'anna.mueller@ex.com';
+
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT a.AuthorID, NULL, 'Author', DATE '2025-03-15', DATE '2026-03-15'
+  FROM Authors a WHERE a.Email = 'akira.tanaka@ex.com';
+
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT a.AuthorID, NULL, 'Author', DATE '2025-04-01', NULL
+  FROM Authors a WHERE a.Email = 'eva.novak@ex.com';
+
+-- 5 для співробітників
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT NULL, e.EmployeeID, 'Employee', DATE '2025-01-10', NULL
+  FROM Employees e WHERE e.Email = 'alice@pub.ch';
+
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT NULL, e.EmployeeID, 'Employee', DATE '2025-02-10', DATE '2025-12-31'
+  FROM Employees e WHERE e.Email = 'bohdan@pub.ch';
+
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT NULL, e.EmployeeID, 'Employee', DATE '2025-03-05', NULL
+  FROM Employees e WHERE e.Email = 'chloe@pub.ch';
+
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT NULL, e.EmployeeID, 'Employee', DATE '2025-03-20', NULL
+  FROM Employees e WHERE e.Email = 'emma@pub.ch';
+
+INSERT INTO Contracts (AuthorID, EmployeeID, ContractType, StartDate, EndDate)
+SELECT NULL, e.EmployeeID, 'Employee', DATE '2025-04-15', NULL
+  FROM Employees e WHERE e.Email = 'karl@pub.ch';
+
+COMMIT;
+
+-- ---- OrderItem (10): Orders × Books ----
+
+START TRANSACTION;
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 3, 49.90
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'TechBooks GmbH' AND o.OrderDate = DATE '2025-01-10'
+   AND b.ISBN = '978-0-100000-001';
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 2, 59.00
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'EduLab SA' AND o.OrderDate = DATE '2025-01-15'
+   AND b.ISBN = '978-0-100000-002';
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 1, 39.50
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'DataWorks AG' AND o.OrderDate = DATE '2025-02-01'
+   AND b.ISBN = '978-0-100000-003';
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 5, 29.90
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'Libra LLC' AND o.OrderDate = DATE '2025-02-18'
+   AND b.ISBN = '978-0-100000-004';
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 4, 54.00
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'Orion Labs' AND o.OrderDate = DATE '2025-03-03'
+   AND b.ISBN = '978-0-100000-005';
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 3, 46.00
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'Pixel Media' AND o.OrderDate = DATE '2025-03-20'
+   AND b.ISBN = '978-0-100000-006';
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 2, 32.00
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'QuickLearn' AND o.OrderDate = DATE '2025-04-05'
+   AND b.ISBN = '978-0-100000-007';
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 6, 52.50
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'Read&Co' AND o.OrderDate = DATE '2025-04-22'
+   AND b.ISBN = '978-0-100000-008';
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 2, 28.90
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'Star Books' AND o.OrderDate = DATE '2025-05-09'
+   AND b.ISBN = '978-0-100000-009';
+
+INSERT INTO OrderItem (OrderID, BookID, Quantity, UnitPrice)
+SELECT o.OrderID, b.BookID, 7, 44.00
+  FROM Orders o JOIN Books b
+ WHERE o.ClientName = 'Nova Print' AND o.OrderDate = DATE '2025-05-25'
+   AND b.ISBN = '978-0-100000-010';
 
 COMMIT;
 
 -- ================================================================
--- DML: UPDATE — оновлення записів
+-- Задача 4. Перевірка вмісту таблиць
 -- ================================================================
 
--- Змінити статус замовлення 5 з 'New' на 'InProgress'
-UPDATE Orders
-   SET Status = 'InProgress'
- WHERE OrderID = 5;
-
--- Оновити рік видання книги 1 (перевидання)
-UPDATE Books
-   SET PublishYear = 2024
- WHERE BookID = 1;
-
--- Закрити контракт співробітника 3 (встановити EndDate)
-UPDATE Contracts
-   SET EndDate = '2025-12-31'
- WHERE EmployeeID = 3 AND ContractType = 'Employee';
+SELECT * FROM authors      LIMIT 0, 1000;
+SELECT * FROM authors;
+SELECT * FROM employees;
+SELECT * FROM books;
+SELECT * FROM authorbook;
+SELECT * FROM contracts;
+SELECT * FROM employeebook;
+SELECT * FROM orderitem;
+SELECT * FROM orders;
 
 -- ================================================================
--- DML: DELETE — видалення з каскадним ефектом
--- ================================================================
-
--- Видалити скасоване замовлення 10 — каскадом видаляється й OrderItem (10, 1)
-DELETE FROM Orders WHERE OrderID = 10;
-
--- ================================================================
--- SELECT + JOIN: перевірка коректності даних
--- ================================================================
-
--- Книги разом з їхніми авторами
-SELECT b.BookID, b.Title, a.Name AS Author
-  FROM Books b
-  JOIN AuthorBook ab ON ab.BookID = b.BookID
-  JOIN Authors    a  ON a.AuthorID = ab.AuthorID
- ORDER BY b.BookID;
-
--- Замовлення з позиціями та підсумковою сумою
-SELECT o.OrderID,
-       o.ClientName,
-       o.Status,
-       SUM(oi.Quantity * oi.UnitPrice) AS OrderTotal
-  FROM Orders o
-  JOIN OrderItem oi ON oi.OrderID = o.OrderID
- GROUP BY o.OrderID, o.ClientName, o.Status
- ORDER BY o.OrderID;
-
--- Контракти з іменем власника (автор або співробітник)
-SELECT c.ContractID,
-       c.ContractType,
-       COALESCE(a.Name, e.Name) AS OwnerName,
-       c.StartDate,
-       c.EndDate
-  FROM Contracts c
-  LEFT JOIN Authors   a ON a.AuthorID   = c.AuthorID
-  LEFT JOIN Employees e ON e.EmployeeID = c.EmployeeID
- ORDER BY c.StartDate DESC;
-
--- ================================================================
--- Підрахунок рядків у всіх таблицях (очікувані значення — див. README)
+-- Задача 5. Quick counts — очікуємо по 10 у кожній таблиці
 -- ================================================================
 
 SELECT 'Authors'      AS Tbl, COUNT(*) AS Cnt FROM Authors
@@ -303,13 +444,31 @@ UNION ALL SELECT 'Contracts',   COUNT(*) FROM Contracts
 UNION ALL SELECT 'OrderItem',   COUNT(*) FROM OrderItem;
 
 -- ================================================================
--- Висновки (заповни/відкоригуй)
+-- Додатково (не в задачах зошита) — типові DML-операції UPDATE/DELETE
 -- ================================================================
--- У практичній роботі створено схему `publishing` з 8 таблиць, що відповідає
--- ER-моделі з практичної роботи 3. Усі первинні та зовнішні ключі,
--- обмеження UNIQUE і CHECK задані в DDL; складніші бізнес-правила
--- (ексклюзивний власник контракту, узгодженість дат) винесено в тригери
--- (практична 6). Тестові DML-операції (INSERT по 10 записів у кожну
--- таблицю, UPDATE, DELETE, SELECT з JOIN) підтверджують коректну роботу
--- зв'язків: каскадне видалення позицій замовлення, UNIQUE на ISBN/Email,
--- посилання у FK. База готова до виконання DQL-запитів (практична 5).
+
+-- Змінити статус замовлення (DataWorks AG) з 'InProgress' на 'Completed'
+UPDATE Orders
+   SET Status = 'Completed'
+ WHERE ClientName = 'DataWorks AG' AND OrderDate = DATE '2025-02-01';
+
+-- Оновити рік видання книги (перевидання)
+UPDATE Books
+   SET PublishYear = 2024
+ WHERE ISBN = '978-0-100000-001';
+
+-- Закрити відкритий контракт співробітника
+UPDATE Contracts
+   SET EndDate = DATE '2025-12-31'
+ WHERE ContractType = 'Employee'
+   AND EmployeeID = (SELECT EmployeeID FROM Employees WHERE Email = 'chloe@pub.ch')
+   AND EndDate IS NULL;
+
+-- Видалити скасоване замовлення — через каскад зникне пов'язана позиція OrderItem
+DELETE FROM Orders
+ WHERE ClientName = 'Nova Print' AND Status = 'Canceled';
+
+-- ================================================================
+-- Висновки (Тема 4)
+-- ================================================================
+-- TODO: вставити висновки з робочого зошиту.
