@@ -1,0 +1,17 @@
+[project]
+name = "practical-9"
+version = "0.1.0"
+description = "Практична 9 — обробка та візуалізація даних publishing засобами Python (pandas + matplotlib + seaborn + Streamlit)."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "matplotlib>=3.10.9",
+    "pandas>=3.0.2",
+    "pymysql>=1.1",
+    "pyarrow>=14",
+    "seaborn>=0.13",
+    "sqlalchemy>=2.0.49",
+    "streamlit>=1.57.0",
+    "cryptography>=47.0.0",
+    "python-dotenv>=1.2.2",
+]

@@ -1,8 +1,8 @@
 # Бази даних — практичні роботи (схема `publishing`)
 
-Репозиторій з практичними роботами з курсу **«Бази даних»**. Предметна область — **видавнича компанія**: автори, співробітники, книги, контракти та замовлення. Усі практичні працюють над однією і тією ж схемою `publishing`, яка проєктується в практичній 3 і далі реалізовується в практичних 4–8.
+Репозиторій з практичними роботами з курсу **«Бази даних»**. Предметна область — **видавнича компанія**: автори, співробітники, книги, контракти та замовлення. Усі практичні працюють над однією і тією ж схемою `publishing`, яка проєктується в практичній 3 і далі реалізовується в практичних 4–8. Практична 9 переходить до Python: міні-ETL з pandas + matplotlib + Streamlit поверх тієї ж схеми.
 
-Середовище — **MySQL 8.0+**, клієнт — **MySQL Workbench** (або `mysql` CLI).
+Середовище — **MySQL 8.0+**, клієнт — **MySQL Workbench** (або `mysql` CLI). Для практичної 9 додатково — **Python 3.10+** із бібліотеками `pandas`, `sqlalchemy`, `pymysql`, `matplotlib`, `seaborn`, `streamlit`.
 
 ---
 
@@ -16,6 +16,7 @@
 | 6 | Складні SQL-вирази (тригери) | [`practical_6.sql`](practical_6.sql) | Два тригери на `Contracts`, сигналізація помилок через `SIGNAL SQLSTATE '45000'`. |
 | 7 | Вкладені запити та повторне використання коду | [`practical_7.sql`](practical_7.sql) | NOT EXISTS, підзапит у HAVING, CTE + RANK(), VIEW `v_book_sales`. |
 | 8 | Додаткові вбудовані SQL функції | [`practical_8.sql`](practical_8.sql) | Текстові (UPPER, CONCAT, LENGTH, LIKE), числові (ROUND, AVG, MOD), часові (CURDATE, DATEDIFF, YEAR, MONTH), логічні (IF, CASE), службові (IFNULL). |
+| 9 | Обробка та візуалізація даних засобами Python | [`practical_9/`](practical_9/) | Міні-ETL: pandas + SQLAlchemy + matplotlib + seaborn + Streamlit. KPI, бар-чарти, динаміка продажів, Pareto 80/20, heatmap, інтерактивна веб-панель. |
 
 ---
 
@@ -44,7 +45,7 @@
 
 ## Як запустити
 
-**Порядок обов'язковий:** `4 → 5 → 6 → 7 → 8`. Практична 4 створює базу з нуля, практичні 5–8 припускають, що дані вже є.
+**Порядок обов'язковий:** `4 → 5 → 6 → 7 → 8 → 9`. Практична 4 створює базу з нуля, практичні 5–8 припускають, що дані вже є. Практична 9 не модифікує схему — лише читає її із Python.
 
 ### Через MySQL Workbench
 
@@ -210,6 +211,28 @@ Contracts=10  AuthorBook=10  EmployeeBook=10  OrderItem=10
 Повний розбір — [practical_8.sql](practical_8.sql).
 ---
 
+## Практична 9 — Обробка та візуалізація даних засобами Python
+
+**Папка:** [`practical_9/`](practical_9/). Міні-ETL над схемою `publishing`: підключення з Python до MySQL, формування єдиної аналітичної таблиці у `pandas`, розрахунок KPI, побудова чотирьох інформативних графіків у `matplotlib` / `seaborn` та інтерактивний веб-інтерфейс на `Streamlit`.
+
+**Задачі за зошитом:**
+
+- **Задача 1** — `pd.read_sql` для імпорту таблиць `Books`, `Orders`, `OrderItem` у DataFrame'и (`connect_publishing.py`).
+- **Задача 2** — побудова єдиної аналітичної `df` через два `merge` (`OrderItem ← Orders ← Books`) + поле `Revenue = Quantity * UnitPrice`, експорт у `sales_data.csv`.
+- **Задача 3** — стовпчикова діаграма «Дохід по книгах» (`chart_top_books.py`) → `revenue_by_book.png`.
+- **Задача 4** — лінійний графік «Динаміка продажів за датами» (`chart_sales_dynamics.py`) → `revenue_by_month.png`.
+- **Задача 5** — 4 KPI: кількість замовлень, проданих одиниць, сумарна виручка, середній чек (`kpi.py`) → `kpi.csv`.
+- **Задача 6** — горизонтальна стовпчикова діаграма «Топ-жанри за виручкою» (`chart_top_genres.py`) → `genre_revenue.csv`.
+- **Задача 7** — правило Парето 80/20 для книг (`chart_pareto.py`): стовпчики виручки + лінія cumulative % з межею 80 % → `book_pareto.csv`.
+- **Бонус** — heatmap «жанр × рік видання» через `seaborn` (`heatmap_genre_year.py`) → `genre_year_heatmap.csv`.
+- **Задача 8** — інтерактивна Streamlit-панель (`app.py`): підключення до MySQL із сайдбару, фільтри по даті, вкладки KPI (4 метрики + rollup-таблиця) та Візуалізації (3 типи графіків + експорт CSV).
+
+**Загальний висновок:** на прикладі бази `publishing` відпрацьовано стандартний цикл аналітики на Python — Read → Clean → Transform → Analyze → Visualize → Save. Складні аналітичні питання, що їх громіздко виражати у чистому SQL (Pareto-аналіз, KPI-блок, heatmap, інтерактивний дашборд), елегантно вирішуються 30–80 рядками коду; pandas виступає природним продовженням SQL-частини курсу.
+
+Повний розбір (з висновками по кожній задачі та інструкцією запуску) — [practical_9/README.md](practical_9/README.md).
+
+---
+
 ## Структура репозиторія
 
 ```
@@ -220,7 +243,21 @@ bd_uni/
 ├── practical_5.sql       ← 19 DQL-задач
 ├── practical_6.sql       ← Задачі 1–4: тригери + тести + висновки після кожної
 ├── practical_7.sql       ← Задачі 1–5: NOT EXISTS, HAVING-subquery, CTE+RANK, VIEW
-└── practical_8.sql       ← Задачі 1–5: текстові, числові, часові, логічні, службові функції
+├── practical_8.sql       ← Задачі 1–5: текстові, числові, часові, логічні, службові функції
+└── practical_9/          ← Міні-ETL Python: pandas, matplotlib, seaborn, Streamlit
+    ├── README.md
+    ├── db.py
+    ├── connect_publishing.py
+    ├── chart_top_books.py
+    ├── chart_sales_dynamics.py
+    ├── kpi.py
+    ├── chart_top_genres.py
+    ├── chart_pareto.py
+    ├── heatmap_genre_year.py
+    ├── app.py
+    ├── pyproject.toml    ← декларація залежностей (uv)
+    ├── uv.lock           ← фіксовані версії пакетів (uv sync)
+    └── main.py           ← точка входу uv-проєкту
 ```
 
 ---
